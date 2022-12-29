@@ -61,10 +61,7 @@ const AccountForm = (props) => {
   }, []); */
 
   return (
-    <form
-      className="max-w-sm my-8 mx-auto"
-      onSubmit={handleSubmit(submitHandler)}
-    >
+    <form className={classes.form} onSubmit={handleSubmit(submitHandler)}>
       <div className={classes.control}>
         <label htmlFor="account-name">Account Name</label>
         <input

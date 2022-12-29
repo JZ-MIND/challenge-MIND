@@ -1,15 +1,15 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useHistory } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useHistory } from "react-router-dom";
 import { yupResolver } from "@hookform/resolvers/yup";
-import classes from "./UserForm.module.css";
 import Dropdown from "react-dropdown";
+import classes from "./UserForm.module.css";
 import "react-dropdown/style.css";
-import { getAccounts } from "../../services/accountService";
-import { createLog } from "../../services/logService";
 import { createUser, updateUser } from "../../services/usersService";
 import { userSchema } from "../../schemas/schemas";
+import { signUp } from "../../services/authService";
+import { getAccounts } from "../../services/accountService";
 
 const UserForm = (props) => {
   const [isEditForm, setIsEditForm] = useState(false);
@@ -18,11 +18,6 @@ const UserForm = (props) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const history = useHistory();
-  const newUserInputRef = useRef();
-  const userRoleInputRef = useRef();
-
-  const options = [{ value: "testOption", label: "Test Option" }];
-  const defaultOption = options[0];
 
   const {
     register,
@@ -30,8 +25,45 @@ const UserForm = (props) => {
     setValue,
     formState: { errors },
   } = useForm({
-    resolver: yupResolver(userSchema),
+    resolver: yupResolver(userSchema(isEditForm)),
   });
+
+  const submitHandler = (data) => {
+    const { userName, userEmail, userPassword, userAccount } = data;
+
+    const user = {
+      name: userName,
+      email: userEmail,
+      ...(userPassword && { password: userPassword }),
+      account: userAccount,
+    };
+
+    console.log(user);
+
+    if (isEditForm) {
+      updateUserHandler(user);
+    } else {
+      addUserHandler(user);
+    }
+  };
+
+  async function updateUserHandler(user) {
+    const id = props?.id;
+    const response = await updateUser(id, user);
+    /* if (response.ok) {
+      await createLog("USER UPDATED");
+    } */
+    cleanInputs();
+  }
+
+  async function addUserHandler(user) {
+    const response = await signUp(user.email, user.password, user.name);
+
+    if (response.ok) {
+      await createUser({ name: user.name, email: user.email });
+    }
+    cleanInputs();
+  }
 
   const fetchAccountHandler = useCallback(async () => {
     setError(null);
@@ -40,19 +72,12 @@ const UserForm = (props) => {
       if (!response.ok) {
         throw new Error("Something went wrong!");
       }
-      if (response.ok) {
-        await createLog("USERS READED");
-      }
-
       const data = await response.json();
-
       const loadedAccounts = [];
-
-      console.log(data);
 
       for (const key in data) {
         loadedAccounts.push({
-          value: key,
+          value: data[key].name,
           label: data[key].name,
         });
       }
@@ -65,67 +90,39 @@ const UserForm = (props) => {
     setIsLoading(false);
   });
 
-  const submitHandler = (event) => {
-    event.preventDefault();
-
-    const enteredNewUser = newUserInputRef.current.value;
-    const enteredNewRole = userRoleInputRef.current.value;
-    const user = { name: enteredNewUser, role: enteredNewRole };
-
-    if (isEditForm) {
-      updateUserHandler(user);
-    } else {
-      addUserHandler(user);
-    }
-  };
-
-  async function updateUserHandler(user) {
-    const id = props?.id;
-    const response = await updateUser(id, user);
-    if (response.ok) {
-      await createLog("USER UPDATED");
-    }
-    cleanInputs();
-  }
-
-  async function addUserHandler(user) {
-    const response = await createUser(user);
-
-    if (response.ok) {
-      await createLog("USER ADDED");
-    }
-    cleanInputs();
-  }
-
   const cleanInputs = () => {
-    newUserInputRef.current.value = "";
-    userRoleInputRef.current.value = "";
+    setValue("userName", "");
+    setValue("userEmail", "");
+    setValue("userPassword", "");
     history.replace("/users");
   };
 
   useEffect(() => {
-    if (props.name || props.role) {
-      newUserInputRef.current.value = props.name;
-      userRoleInputRef.current.value = props.role;
+    if (props.name || props.email) {
+      setValue("userName", props.name);
+      setValue("userEmail", props.email);
       setIsEditForm(true);
+      fetchAccountHandler();
     }
   }, []);
 
   useEffect(() => {
-    fetchAccountHandler();
-  }, []);
+    setValue("userAccount", accountSelected);
+  }, [accountSelected]);
 
   return (
-    <form className={classes.form} onSubmit={submitHandler}>
+    <form className={classes.form} onSubmit={handleSubmit(submitHandler)}>
       <div className={classes.control}>
         <label htmlFor="user-name">User Name</label>
         <input
           type="text"
           id="user-name"
           maxLength="30"
-          ref={newUserInputRef}
           {...register("userName")}
         />
+        {errors.userName && (
+          <p className="text-sm text-red-500">{errors.userName.message}</p>
+        )}
       </div>
       <div className={classes.control}>
         <label htmlFor="user-email">Email</label>
@@ -133,21 +130,41 @@ const UserForm = (props) => {
           type="text"
           id="user-role"
           maxLength="30"
-          ref={userRoleInputRef}
           {...register("userEmail")}
         />
+        {errors.userEmail && (
+          <p className="text-sm text-red-500">{errors.userEmail.message}</p>
+        )}
       </div>
-      <div className={classes.control}>
-        <label htmlFor="user-name">Account</label>
-        <Dropdown
-          options={accounts}
-          onChange={(option) => {
-            setAccountSelected(option.value);
-          }}
-          value={accountSelected}
-          placeholder="Select an option"
-        />
-      </div>
+      {!isEditForm && (
+        <div className={classes.control}>
+          <label htmlFor="user-password">Password</label>
+          <input
+            type="password"
+            id="user-role"
+            maxLength="30"
+            {...register("userPassword")}
+          />
+          {errors.userPassword && (
+            <p className="text-sm text-red-500">
+              {errors.userPassword.message}
+            </p>
+          )}
+        </div>
+      )}
+
+      {isEditForm && (
+        <div className={classes.control}>
+          <label htmlFor="user-account">Account</label>
+          <Dropdown
+            options={accounts}
+            onChange={(option) => setAccountSelected(option.value)}
+            value={accountSelected}
+            placeholder="Select an option"
+          />
+        </div>
+      )}
+
       <div className={classes.action}>
         <button>
           {!isEditForm && "Create User"}

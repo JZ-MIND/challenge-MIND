@@ -22,9 +22,10 @@ const LogsTable = () => {
       for (const key in data) {
         loadedUsers.push({
           id: key,
-          date: data[key].date,
+          user: data[key].date,
           action: data[key].action,
-          ip: data[key].ip,
+          date: data[key].date,
+          account: data[key].account || "Unassigned",
         });
       }
 
@@ -48,9 +49,10 @@ const LogsTable = () => {
         <table>
           <thead>
             <tr>
-              <th>Date</th>
+              <th>User</th>
               <th>Action</th>
-              <th>IP Direction</th>
+              <th>Date</th>
+              <th>Account</th>
             </tr>
           </thead>
           <tbody>
@@ -59,9 +61,10 @@ const LogsTable = () => {
               logs.map((log) => {
                 return (
                   <tr key={log.id}>
-                    <td>{log.date}</td>
+                    <td>{log.user}</td>
                     <td>{log.action}</td>
-                    <td>{log.ip}</td>
+                    <td>{log.date}</td>
+                    <td>{log.account}</td>
                   </tr>
                 );
               })}

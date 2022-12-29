@@ -18,7 +18,7 @@ const EditUser = () => {
   return (
     <section className={classes.profile}>
       <h1>Edit User</h1>
-      <UserForm id={myparam.id} name={myparam.name} role={myparam.role} />
+      <UserForm id={myparam.id} name={myparam.name} email={myparam.email} />
     </section>
   );
 };

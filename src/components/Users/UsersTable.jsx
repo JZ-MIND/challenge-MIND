@@ -31,7 +31,8 @@ const UsersTable = () => {
         loadedUsers.push({
           id: key,
           name: data[key].name,
-          role: data[key].role,
+          email: data[key].email,
+          account: data[key].account,
         });
       }
 
@@ -67,9 +68,9 @@ const UsersTable = () => {
         <table>
           <thead>
             <tr>
-              <th>id</th>
               <th>Name</th>
-              <th>Role</th>
+              <th>Email</th>
+              <th>Current Account</th>
               <th>Edit</th>
               <th>Delete</th>
             </tr>
@@ -80,9 +81,9 @@ const UsersTable = () => {
               users.map((user) => {
                 return (
                   <tr key={user.id}>
-                    <td>{user.id}</td>
                     <td>{user.name}</td>
-                    <td>{user.role}</td>
+                    <td>{user.email}</td>
+                    <td>{user.account}</td>
                     <td className={classes.edit}>
                       <button
                         type="button"
