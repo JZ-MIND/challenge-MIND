@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import moment from "moment";
 import classes from "./LogsTable.module.css";
 import { getLogs } from "../../services/logService";
 
@@ -22,7 +23,7 @@ const LogsTable = () => {
       for (const key in data) {
         loadedUsers.push({
           id: key,
-          user: data[key].date,
+          user: data[key].user,
           action: data[key].action,
           date: data[key].date,
           account: data[key].account || "Unassigned",
@@ -63,7 +64,9 @@ const LogsTable = () => {
                   <tr key={log.id}>
                     <td>{log.user}</td>
                     <td>{log.action}</td>
-                    <td>{log.date}</td>
+                    <td>
+                      {moment(new Date(log.date)).format("LLL").toString()}
+                    </td>
                     <td>{log.account}</td>
                   </tr>
                 );

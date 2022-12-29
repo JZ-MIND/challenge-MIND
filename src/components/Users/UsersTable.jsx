@@ -16,12 +16,6 @@ const UsersTable = () => {
     setError(null);
     try {
       const response = await getUsers();
-      if (!response.ok) {
-        throw new Error("Something went wrong!");
-      }
-      if (response.ok) {
-        await createLog("USERS READED");
-      }
 
       const data = await response.json();
 
@@ -44,12 +38,29 @@ const UsersTable = () => {
     setIsLoading(false);
   }, []);
 
-  const removeUserHandler = async (userId) => {
-    const response = await removeUser(userId);
+  const removeUserHandler = async (user) => {
+    /* const response = await removeUser(userId);
     if (response.ok) {
       await createLog("USER REMOVED");
     }
-    fetchUsersHandler();
+    fetchUsersHandler(); */
+    removeUser(user.id)
+      .then((response) => {
+        if (response.ok) return response;
+
+        throw new Error("No fue posible eliminar usuario");
+      })
+      .then(() =>
+        createLog({
+          user: user.name,
+          action: "User Deleted",
+          account: "Unassigned",
+        })
+      )
+      .then(() => fetchUsersHandler())
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   const editUserHandler = (user) => {
@@ -95,7 +106,7 @@ const UsersTable = () => {
                     <td className={classes.delete}>
                       <button
                         type="button"
-                        onClick={() => removeUserHandler(user.id)}
+                        onClick={() => removeUserHandler(user)}
                       >
                         <FaTrash />
                       </button>

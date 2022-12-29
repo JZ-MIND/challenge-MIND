@@ -10,6 +10,7 @@ import { createUser, updateUser } from "../../services/usersService";
 import { userSchema } from "../../schemas/schemas";
 import { signUp } from "../../services/authService";
 import { getAccounts } from "../../services/accountService";
+import { createLog } from "../../services/logService";
 
 const UserForm = (props) => {
   const [isEditForm, setIsEditForm] = useState(false);
@@ -38,8 +39,6 @@ const UserForm = (props) => {
       account: userAccount,
     };
 
-    console.log(user);
-
     if (isEditForm) {
       updateUserHandler(user);
     } else {
@@ -49,20 +48,45 @@ const UserForm = (props) => {
 
   async function updateUserHandler(user) {
     const id = props?.id;
-    const response = await updateUser(id, user);
-    /* if (response.ok) {
-      await createLog("USER UPDATED");
-    } */
-    cleanInputs();
+    updateUser(id, user)
+      .then((response) => {
+        if (response.ok) return response;
+        throw new Error("No fue posible actualizar el Usuario");
+      })
+      .then(() =>
+        createLog({
+          user: user.name,
+          action: "User Updated",
+          account: user.account,
+        })
+      )
+      .then(() => cleanInputs())
+      .catch((error) => {
+        console.log(error);
+      });
   }
 
   async function addUserHandler(user) {
-    const response = await signUp(user.email, user.password, user.name);
+    signUp(user.email, user.password, user.name)
+      .then((response) => {
+        if (response.ok) return response;
 
-    if (response.ok) {
-      await createUser({ name: user.name, email: user.email });
-    }
-    cleanInputs();
+        throw new Error(
+          "No es posible crear el Usuario / Usuario ya registrado"
+        );
+      })
+      .then(() => {
+        createUser({ name: user.name, email: user.email });
+      })
+      .then(() => {
+        createLog({ user: user.name, action: "User Created" });
+      })
+      .then(() => {
+        cleanInputs();
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }
 
   const fetchAccountHandler = useCallback(async () => {
@@ -160,7 +184,7 @@ const UserForm = (props) => {
             options={accounts}
             onChange={(option) => setAccountSelected(option.value)}
             value={accountSelected}
-            placeholder="Select an option"
+            placeholder="Select no option to unassign"
           />
         </div>
       )}
